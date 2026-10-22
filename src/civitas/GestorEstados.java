@@ -1,79 +1,58 @@
 
 package civitas;
 
+/**
+ * Máquina de estados del turno. La vista consulta qué operaciones están
+ * permitidas en cada momento para activar o desactivar sus botones.
+ */
 class GestorEstados {
   EstadoJuego estadoInicial() {
     return (EstadoJuego.INICIO_TURNO);
   }
-  
-OperacionJuego siguienteOperacion(Jugador jugador, EstadoJuego estado){
-    OperacionJuego op = null;
 
-    switch (estado) {
-      case INICIO_TURNO :
-          op = OperacionJuego.AVANZAR;
+  boolean permite(Jugador jugador, EstadoJuego estado, OperacionJuego operacion){
+    boolean permitida = false;
+
+    switch (operacion) {
+      case AVANZAR :
+        permitida = (estado == EstadoJuego.INICIO_TURNO);
         break;
 
-      case DESPUES_AVANZAR :
-        if (jugador.getPuedeComprar())
-          op = OperacionJuego.COMPRAR;
-        else if (jugador.tieneAlgoQueGestionar())
-          op = OperacionJuego.GESTIONAR;
-        else
-          op = OperacionJuego.PASAR_TURNO;
+      case COMPRAR :
+        permitida = (estado == EstadoJuego.DESPUES_AVANZAR && jugador.getPuedeComprar());
         break;
 
-      case DESPUES_COMPRAR :
-        if (jugador.tieneAlgoQueGestionar())
-          op = OperacionJuego.GESTIONAR;
-        else
-          op = OperacionJuego.PASAR_TURNO;
+      case GESTIONAR :
+        permitida = (estado != EstadoJuego.INICIO_TURNO && jugador.tieneAlgoQueGestionar());
         break;
 
-      case DESPUES_GESTIONAR :
-        op = OperacionJuego.PASAR_TURNO;
-        break;        
+      case PASAR_TURNO :
+        permitida = (estado != EstadoJuego.INICIO_TURNO);
+        break;
     }
-    return op;
+    return permitida;
   }
-  
-  EstadoJuego siguienteEstado (Jugador jugador, EstadoJuego estado, OperacionJuego operacion) {
-    EstadoJuego siguiente = null;
 
-    switch (estado) {
-      case INICIO_TURNO :
-        if (operacion==OperacionJuego.AVANZAR)
-          siguiente = EstadoJuego.DESPUES_AVANZAR;
+  EstadoJuego siguienteEstado (EstadoJuego estado, OperacionJuego operacion) {
+    EstadoJuego siguiente = estado;
+
+    switch (operacion) {
+      case AVANZAR :
+        siguiente = EstadoJuego.DESPUES_AVANZAR;
         break;
 
-      case DESPUES_AVANZAR :
-        switch (operacion) {
-          case PASAR_TURNO :
-            siguiente = EstadoJuego.INICIO_TURNO;
-            break;
-          case COMPRAR :
-            siguiente = EstadoJuego.DESPUES_COMPRAR;
-            break;
-          case GESTIONAR :
-            siguiente = EstadoJuego.DESPUES_GESTIONAR;
-            break;
-        }
+      case COMPRAR :
+        siguiente = EstadoJuego.DESPUES_COMPRAR;
         break;
 
-      case DESPUES_COMPRAR :
-        if (operacion==OperacionJuego.GESTIONAR)
-          siguiente = EstadoJuego.DESPUES_GESTIONAR;
-        else if (operacion==OperacionJuego.PASAR_TURNO)
-          siguiente = EstadoJuego.INICIO_TURNO;
+      case GESTIONAR :
+        siguiente = EstadoJuego.DESPUES_GESTIONAR;
         break;
 
-      case DESPUES_GESTIONAR :
-        if (operacion==OperacionJuego.PASAR_TURNO)
-          siguiente = EstadoJuego.INICIO_TURNO;
+      case PASAR_TURNO :
+        siguiente = EstadoJuego.INICIO_TURNO;
         break;
     }
-
-    Diario.getInstance().ocurreEvento("De: "+estado.toString()+ " con "+operacion.toString()+ " sale: "+siguiente.toString());
 
     return siguiente;
   }

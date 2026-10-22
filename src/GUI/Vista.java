@@ -1,29 +1,29 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package GUI;
 
+import civitas.CivitasJuego;
+import civitas.Jugador;
+import java.util.List;
 
-import civitas.OperacionInmobiliaria;
-import civitas.OperacionJuego;
-import controladorCivitas.Respuesta;
-
+/**
+ * Lo que el controlador necesita de la vista.
+ */
 public interface Vista {
 
+    public void setCivitasJuego(CivitasJuego juego);
+
+    /** Vuelve a leer el modelo y refresca toda la interfaz. */
     public void actualiza();
 
-    public void pausa();
+    /** Refresca solo qué botones están activos (por ejemplo, al empezar una animación). */
+    public void actualizaBotones();
 
-    public Respuesta comprar();
+    /** Anima el dado y el movimiento de la ficha; llama a alTerminar al acabar. */
+    public void animarTirada(int jugador, int desde, int tirada, Runnable alTerminar);
 
-    public OperacionInmobiliaria elegirOperacion();
+    public void mostrarSorpresa(String texto);
 
-    public int elegirPropiedad();
+    public void mostrarEventos(List<String> eventos);
 
-    public void mostrarSiguienteOperacion(OperacionJuego operación);
-
-    public void mostrarEventos();
-
+    public void mostrarFinDelJuego(List<Jugador> ranking);
 }

@@ -51,7 +51,7 @@ public class Tablero {
         
         nueva = actual + tirada;
         
-        if(nueva > casillas.size()){
+        if(nueva >= casillas.size()){
             nueva = nueva % casillas.size();
             porSalida = true;
         }

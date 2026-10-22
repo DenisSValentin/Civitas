@@ -16,12 +16,12 @@ public class JugadorEspeculador extends Jugador {
     }
     
     @Override
-    int getCasasMax(){
+    public int getCasasMax(){
         return CasasMax * FactorEspeculador;
     }
     
     @Override
-    int getHotelesMax(){
+    public int getHotelesMax(){
         return HotelesMax * FactorEspeculador;
     }
     

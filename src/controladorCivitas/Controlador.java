@@ -2,92 +2,113 @@
 package controladorCivitas;
 
 /**
+ * Controlador por eventos: la vista llama a estos métodos cuando el usuario
+ * pulsa un botón, y el controlador ejecuta la operación en el modelo y le dice
+ * a la vista que se actualice.
  *
  * @author Denis Valentin Stoyanov D'Antonio y Raúl Cruz Arévalo
  */
 import civitas.CivitasJuego;
-import civitas.OperacionJuego;
-import civitas.OperacionInmobiliaria;
-import GUI.*;
+import civitas.Diario;
+import civitas.Sorpresa;
+import GUI.Vista;
+import java.util.ArrayList;
 
 public class Controlador {
-    
+
     private CivitasJuego juego;
-    private CivitasView vista;
-    
-    
-    public Controlador(CivitasJuego juego, CivitasView vista){
+    private final Vista vista;
+    private boolean animando = false;
+
+
+    public Controlador(CivitasJuego juego, Vista vista){
         this.juego = juego;
         this.vista = vista;
     }
-    
-    public void juega(){
-        
-        OperacionJuego opJuego;
-        Respuesta respuesta;
-        OperacionInmobiliaria opInmob;
-        
-        while (!juego.finalDelJuego()){
-            
-            System.out.println("\n------------------------------");
-            
-            vista.actualiza();
-            vista.pausa();
-          
-            opJuego = juego.siguientePaso();
-            vista.mostrarSiguienteOperacion(opJuego);
-            
-            if(opJuego != OperacionJuego.PASAR_TURNO){
-                vista.mostrarEventos();
-            }
-            
-            if(!juego.finalDelJuego()){
-                if( opJuego == OperacionJuego.COMPRAR){
-                    respuesta = vista.comprar();
-                    
-                    if(respuesta == Respuesta.SI){
-                        juego.comprar();
-                        System.out.println("\nCompras esta propiedad.");
-                    }
-                    
-                    else if(respuesta == Respuesta.NO)
-                        System.out.println("\nHas decidido no comprar esta propiedad.");
-                    
-                    juego.siguientePasoCompletado(opJuego);
-                }
-                
-                else if (opJuego == OperacionJuego.GESTIONAR){
-                    opInmob = vista.elegirOperacion();
-                    if(opInmob != OperacionInmobiliaria.TERMINAR){
-                        int propiedad = vista.elegirPropiedad();
-                        
-                        if(opInmob == OperacionInmobiliaria.CONSTRUIR_CASA)
-                            juego.construirCasa(propiedad);
-                        
-                        if(opInmob == OperacionInmobiliaria.CONSTRUIR_HOTEL)
-                            juego.construirHotel(propiedad);
-                        
-                        if(opInmob == OperacionInmobiliaria.HACER_CALLE_SOCIAL)
-                            juego.hacerCalleSocial(propiedad);
-                    }
-                    
-                    if(opInmob == OperacionInmobiliaria.TERMINAR){
-                        juego.siguientePasoCompletado(opJuego);
-                    }
-                }
-            }
-        }
-        
-        juego.ranking();
 
-        System.out.println("\nSE HA ACABADO EL JUEGO, ALGUIEN HA ENTRADO EN BANCARROTA, LA TABLA DE PUNTUACIONES ES: \n");
-        
-        for(int i = 0; i < juego.getJugadores().size() ; i++){
-            System.out.println("Puesto " + (i+1) + " -> " + juego.getJugadores().get(i).getNombre() + " con saldo: " +
-                    juego.getJugadores().get(i).getSaldo());
-        }
-        
+    public CivitasJuego getJuego(){
+        return juego;
     }
-    
-    
+
+    public boolean isAnimando(){
+        return animando;
+    }
+
+    public void iniciar(){
+        vista.setCivitasJuego(juego);
+        despuesDeOperacion();
+    }
+
+    public void nuevaPartida(ArrayList<String> nombres, boolean debug){
+        descartarEventos();
+        juego = new CivitasJuego(nombres, debug);
+        animando = false;
+        iniciar();
+    }
+
+    public void tirarDado(){
+        if(animando || !juego.puedeAvanzar())
+            return;
+
+        int indice = juego.getIndiceJugadorActual();
+        int desde = juego.getJugadorActual().getCasillaActual();
+        int tirada = juego.avanzar();
+        Sorpresa sorpresa = juego.getUltimaSorpresa();
+
+        // El modelo ya ha movido al jugador; la vista enseña la animación
+        // y solo entonces se muestran los eventos y el nuevo estado.
+        animando = true;
+        vista.actualizaBotones();
+        vista.animarTirada(indice, desde, tirada, () -> {
+            animando = false;
+            if(sorpresa != null)
+                vista.mostrarSorpresa(sorpresa.getTexto());
+            despuesDeOperacion();
+        });
+    }
+
+    public void comprar(){
+        if(!animando && juego.comprar())
+            despuesDeOperacion();
+    }
+
+    public void construirCasa(int ip){
+        if(!animando && juego.construirCasa(ip))
+            despuesDeOperacion();
+    }
+
+    public void construirHotel(int ip){
+        if(!animando && juego.construirHotel(ip))
+            despuesDeOperacion();
+    }
+
+    public void hacerCalleSocial(int ip){
+        if(!animando && juego.hacerCalleSocial(ip))
+            despuesDeOperacion();
+    }
+
+    public void pasarTurno(){
+        if(!animando && juego.pasarTurno())
+            despuesDeOperacion();
+    }
+
+    private void despuesDeOperacion(){
+        ArrayList<String> eventos = new ArrayList<>();
+        while(Diario.getInstance().eventosPendientes())
+            eventos.add(Diario.getInstance().leerEvento());
+
+        if(!eventos.isEmpty())
+            vista.mostrarEventos(eventos);
+
+        vista.actualiza();
+
+        if(juego.finalDelJuego())
+            vista.mostrarFinDelJuego(juego.ranking());
+    }
+
+    private void descartarEventos(){
+        while(Diario.getInstance().eventosPendientes())
+            Diario.getInstance().leerEvento();
+    }
+
 }
