@@ -1,0 +1,12 @@
+# Clases compiladas
+out/
+build/
+dist/
+*.class
+
+# Configuración local de NetBeans
+nbproject/private/
+
+# macOS
+.DS_Store
+._*
